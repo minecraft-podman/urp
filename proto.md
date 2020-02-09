@@ -89,8 +89,7 @@ The suggested log levels are:
 Additional levels may be defined by the application.
 
 
-Flow
-----
+### Flow
 
 Packets from different channels may interleave freely and without restriction.
 

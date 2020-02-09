@@ -15,6 +15,16 @@ class MsgType(enum.IntEnum):
     Log = 4  # (S2C): group, level, msg
 
 
+class LogLevels(enum.IntEnum):
+    Trace = 0
+    Debug = 10
+    Verbose = 20
+    Info = 30
+    Warning = 40
+    Error = 50
+    Critical = 60
+
+
 class Disconnected(Exception):
     """
     Not currently connected to the server

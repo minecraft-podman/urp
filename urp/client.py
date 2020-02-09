@@ -1,3 +1,4 @@
+import asyncio
 import collections
 import sys
 import types
@@ -49,16 +50,19 @@ class ClientBaseProtocol(BaseUrpProtocol):
             # TODO: Logging
             with self.urp_open_channel() as (send, queue):
                 await send(MsgType.Call, args, 999)  # TODO (999 == log level)
-                async for msg in queue:
-                    if msg[0] == MsgType.Shoosh:
-                        return
-                    elif msg[0] == MsgType.Return:
-                        yield msg[1]
-                    elif msg[0] == MsgType.Error:
-                        yield get_error(msg[1], msg[2])
-                    elif msg[0] == MsgType.Log:
-                        # TODO
-                        ...
+                try:
+                    async for msg in queue:
+                        if msg[0] == MsgType.Shoosh:
+                            return
+                        elif msg[0] == MsgType.Return:
+                            yield msg[1]
+                        elif msg[0] == MsgType.Error:
+                            yield get_error(msg[1], msg[2])
+                        elif msg[0] == MsgType.Log:
+                            # TODO
+                            ...
+                except asyncio.CancelledError:
+                    send(MsgType.Shoosh)
 
         return call_method
 

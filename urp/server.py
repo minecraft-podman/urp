@@ -25,7 +25,16 @@ class ServerBaseProtocol(BaseUrpProtocol):
 
             # TODO: Logging
             # TODO: maybe redirect stdout/stderr?
-            asyncio.create_task(self._method_task(send, msg[1], msg[2]))
+            task = asyncio.create_task(self._method_task(send, msg[1], msg[2]))
+            while True:
+                msg = asyncio.gather(task, queue.get)
+                if msg is None:  # Returned from task
+                    return
+                # Got from the queue, so list
+                elif msg[0] == MsgType.Shoosh:
+                    task.cancel()
+                    return
+                # Anything else is a protocol error
 
     async def _method_task(self, send, name, kwargs):
         meth = ...(name)  # TODO: function resolution

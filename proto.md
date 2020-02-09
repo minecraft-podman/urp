@@ -26,7 +26,7 @@ Packets are either arrays or strings.
 Array packets are used to encode RPC data:
 1. int: The channel ID
 2. int: Packet type
-3. + Any additional arguments
+3. (and more) Any additional arguments
 
 Channels are created by the client sending a Call packet and destroyed by the Shoosh packet.
 

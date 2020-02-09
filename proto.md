@@ -24,11 +24,11 @@ Packet
 Packets are either arrays or strings.
 
 Array packets are used to encode RPC data:
-0. int: The channel ID
-1. int: Packet type
-2+. Any additional arguments
+1. int: The channel ID
+2. int: Packet type
+3. + Any additional arguments
 
-Channels are created by the client sending a `Call` packet and destroyed by the `Shoosh` packet.
+Channels are created by the client sending a Call packet and destroyed by the Shoosh packet.
 
 String packets are unstructured textual log messages not associated with a partical channel. Note that no structure is defined on this stream, so you need to include newlines and other markers.
 
@@ -53,13 +53,13 @@ A method call. This creates a channel.
 
 If the log level is given, than any log message produced by the server less than this level should be surpressed and not delivered to the client. If the log level is not given, then no log messages should be sent.
 
-### 2 Return (S2C)
+#### 2 Return (S2C)
 Parameters:
 1. value: map, string->Any
 
 A return value.
 
-### 3 Error (S2C)
+#### 3 Error (S2C)
 Parameters:
 1. Name: string, dotted path
 2. Additional: map or nil
@@ -68,7 +68,7 @@ Represents an error. Often will be the last item produced by a method.
 
 If there's additional data, it's suggested that the `msg` key is a human-readable message.
 
-### 4 Log (S2C)
+#### 4 Log (S2C)
 Parameters:
 1. group: str, the dotted path of the log group
 2. level: int, the severity of the log

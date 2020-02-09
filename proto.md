@@ -87,3 +87,17 @@ The suggested log levels are:
 * 60: Critical (Stuff fell over and is on fire, results were certainly affected, and a human probably needs to take action)
 
 Additional levels may be defined by the application.
+
+
+Flow
+----
+
+Packets from different channels may interleave freely and without restriction.
+
+The normal flow each channel is:
+
+1. Client sends Call packet
+2. Server sends a number of Return, Error, and Log packets
+3. Server sends a Shoosh to indicate the operation has completed
+
+This may be interupted at any time by the Client sending a Shoosh packet. After receiving a Shoosh packet, the server shouldn't send any more packets of any kind.

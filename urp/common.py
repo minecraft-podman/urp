@@ -24,6 +24,8 @@ class LogLevels(enum.IntEnum):
     Error = 50
     Critical = 60
 
+# TODO: Write functions to go between python and urp log levels.
+
 
 class Disconnected(Exception):
     """
@@ -120,6 +122,8 @@ class BaseUrpProtocol(asyncio.BaseProtocol):
         self._unpacker = msgpack.Unpacker(raw=False)
         self._channels = IdManager_Sequence()
         self._write_proxy = BackpressureManager(self.urp_write_bytes)
+        self._finished = asyncio.Event()
+        self._tasks = []
 
     # asyncio callbacks
     def connection_made(self, transport):
@@ -128,8 +132,9 @@ class BaseUrpProtocol(asyncio.BaseProtocol):
 
     def connection_lost(self, exc):
         self._write_proxy.shutdown(exc)
-        for q in self._response_queues.values():
+        for q in self._channels.values():
             q.put_nowait(exc)
+        self._finished.set()
 
     def pause_writing(self):
         self._write_proxy.pause_calls()
@@ -210,6 +215,13 @@ class BaseUrpProtocol(asyncio.BaseProtocol):
         """
         raise NotImplementedError
 
+    async def finished(self):
+        """
+        Block until the transport has closed and all tasks have spun down.
+        """
+        # TODO: Track tasks
+        await self._finished
+
 
 class UrpStreamMixin(asyncio.Protocol):
     def data_received(self, data):
@@ -252,3 +264,6 @@ class UrpSubprocessMixin(asyncio.SubprocessProtocol):
         Provided by mixin.
         """
         self._transport.get_pipe_transport(0).write(data)
+
+
+# TODO: stdio/inherited FD mixin

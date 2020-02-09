@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 
-from .common import MsgType, BaseUrpProtocol
+from .common import MsgType, BaseUrpProtocol, UrpStreamMixin, UrpSubprocessMixin
 
 __all__ = ()
 
@@ -18,6 +18,9 @@ def _fqn(cls):
 
 
 class ServerBaseProtocol(BaseUrpProtocol):
+    def __init__(self, router=None):
+        self.router = router if router is not None else {}
+
     async def urp_new_channel(self, channel_id):
         with self.urp_open_channel(channel_id) as (send, queue):
             msg = await queue.get()
@@ -25,6 +28,8 @@ class ServerBaseProtocol(BaseUrpProtocol):
 
             # TODO: Logging
             # TODO: maybe redirect stdout/stderr?
+
+            # Handles channel management and Shooshing
             task = asyncio.create_task(self._method_task(send, msg[1], msg[2]))
             while True:
                 msg = asyncio.gather(task, queue.get)
@@ -35,9 +40,17 @@ class ServerBaseProtocol(BaseUrpProtocol):
                     task.cancel()
                     return
                 # Anything else is a protocol error
+            await send(MsgType.Shoosh)
 
     async def _method_task(self, send, name, kwargs):
-        meth = ...(name)  # TODO: function resolution
+        """
+        Responsible for calling the actual method and producing returns
+        """
+        try:
+            meth = self.router[name]
+        except KeyError:
+            await send(MsgType.Error, '.NotAMethod', None)
+            return
         try:
             methval = meth(**kwargs)
             if inspect.isasyncgenfunction(meth):
@@ -57,3 +70,13 @@ class ServerBaseProtocol(BaseUrpProtocol):
             }
             additional.update(vars(exc))
             await send(MsgType.Error, _fqn(type(exc)), additional)
+
+
+class ServerStreamProtocol(UrpStreamMixin, ServerBaseProtocol):
+    pass
+
+
+class ServerSubprocessProtocol(UrpSubprocessMixin, ServerBaseProtocol):
+    def urp_stderr_recv(self, data):
+        # TODO
+        sys.stderr.buffer.write(data)

@@ -1,6 +1,8 @@
 import asyncio
 import contextlib
 import enum
+import os
+import sys
 
 import msgpack
 
@@ -105,7 +107,8 @@ class IdManager_Sequence(dict):
     @contextlib.contextmanager
     def generate(self, reqid=None):
         if reqid is None:
-            while reqid not in self:
+            reqid = self._next_id
+            while reqid in self:
                 reqid = self._next_id
                 self._next_id += 1
 
@@ -160,8 +163,9 @@ class BaseUrpProtocol(asyncio.BaseProtocol):
         """
         cid, *args = msg
         if cid not in self._channels:
-            asyncio.create_task(self.urp_new_channel(cid))
-        self._channels[cid].put_nowait(args)
+            asyncio.create_task(self.urp_new_channel(cid, args))
+        else:
+            self._channels[cid].put_nowait(args)
 
     async def _urp_send_packet(self, packet):
         """
@@ -220,7 +224,17 @@ class BaseUrpProtocol(asyncio.BaseProtocol):
         Block until the transport has closed and all tasks have spun down.
         """
         # TODO: Track tasks
-        await self._finished
+        await self._finished.wait()
+
+    async def close(self):
+        self._transport.close()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self.close()
+        await self.finished()
 
 
 class UrpStreamMixin(asyncio.Protocol):
@@ -267,3 +281,30 @@ class UrpSubprocessMixin(asyncio.SubprocessProtocol):
 
 
 # TODO: stdio/inherited FD mixin
+
+def make_stdio_binary():
+    """
+    Does posixy and pythony things to prepare stdin/stdout for binary transport.
+    """
+    # Dissassemble all the connections, so that remaining references don't cause problems
+    if hasattr(sys.stdin, 'detach'):
+        # Detach text io, returning buffer; detach buffer, returning raw
+        sys.stdin.detach().detach()
+
+    if hasattr(sys.stdout, 'detach'):
+        sys.stdout.detach().detach()
+
+    # Mock in substitutes for users
+    sys.stdin = open(os.devnull, 'wt')
+    sys.stdout = sys.stderr
+
+    # Do the same thing on a fd level
+    # Get the old stdin/out out of the way
+    fdin = os.dup(0)
+    fdout = os.dup(1)
+
+    # Get the new stdio in place
+    os.dup2(sys.stdin.fileno(), 0)
+    os.dup2(sys.stdout.fileno(), 1)
+
+    return fdin, fdout

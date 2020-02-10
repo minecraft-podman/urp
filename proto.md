@@ -115,3 +115,8 @@ The requested method is not implemented.
 #### `.InvalidParameters`
 
 The requested method is not callable with the given parameters. This may be because required parameters are missing or that the values are invalid/unusuable/not coercable/etc.
+
+Simplifications
+---------------
+
+A client _may_ choose to pipeline calls to avoid multiplexing. However some APIs may not have normal termination (eg an event stream).

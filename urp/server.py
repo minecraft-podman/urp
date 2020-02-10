@@ -17,13 +17,30 @@ def _fqn(cls):
     return fullname
 
 
+async def wait_task_and_queue(task, queue):
+    while True:
+        qtask = asyncio.create_task(queue.get())
+        done, pending = await asyncio.wait(
+            [task, qtask], return_when=asyncio.FIRST_COMPLETED,
+        )
+        if qtask in pending:
+            qtask.cancel()
+
+        # Should we give these in a particular order?
+        for t in done:
+            yield await t
+
+        if task.done():
+            break
+
+
 class ServerBaseProtocol(BaseUrpProtocol):
     def __init__(self, router=None):
+        super().__init__()
         self.router = router if router is not None else {}
 
-    async def urp_new_channel(self, channel_id):
+    async def urp_new_channel(self, channel_id, msg):
         with self.urp_open_channel(channel_id) as (send, queue):
-            msg = await queue.get()
             assert msg[0] == MsgType.Call
 
             # TODO: Logging
@@ -31,16 +48,15 @@ class ServerBaseProtocol(BaseUrpProtocol):
 
             # Handles channel management and Shooshing
             task = asyncio.create_task(self._method_task(send, msg[1], msg[2]))
-            while True:
-                msg = asyncio.gather(task, queue.get)
+            async for msg in wait_task_and_queue(task, queue):
                 if msg is None:  # Returned from task
+                    await send(MsgType.Shoosh)
                     return
                 # Got from the queue, so list
                 elif msg[0] == MsgType.Shoosh:
                     task.cancel()
                     return
                 # Anything else is a protocol error
-            await send(MsgType.Shoosh)
 
     async def _method_task(self, send, name, kwargs):
         """

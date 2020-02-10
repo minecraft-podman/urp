@@ -9,7 +9,10 @@ from .common import (
     make_stdio_binary, Disconnected
 )
 
-__all__ = ('errors', 'ClientStreamProtocol', 'ClientSubprocessProtocol')
+__all__ = (
+    'errors', 'connect_tcp', 'connect_unix', 'connect_inherited_fd',
+    'connect_stdio', 'connect_inherited_socket',
+)
 
 
 class ApplicationError(Exception):

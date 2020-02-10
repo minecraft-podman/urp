@@ -8,6 +8,8 @@ import socket
 from .common import make_stdio_binary
 from .server import ServerStreamProtocol, ServerSubprocessProtocol
 
+__all__ = ('method', 'Service')
+
 
 def method(name_or_func=None):
     """

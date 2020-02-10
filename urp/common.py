@@ -284,27 +284,18 @@ class UrpSubprocessMixin(asyncio.SubprocessProtocol):
 
 def make_stdio_binary():
     """
-    Does posixy and pythony things to prepare stdin/stdout for binary transport.
+    Does posixy things to prepare stdin/stdout for binary transport.
     """
-    # Dissassemble all the connections, so that remaining references don't cause problems
-    if hasattr(sys.stdin, 'detach'):
-        # Detach text io, returning buffer; detach buffer, returning raw
-        sys.stdin.detach().detach()
+    # Moves FD 0/1 to new FDs and copy better things over them.
+    # Shuffle FDs under the nose of Python. The resulting state will _look_ the same.
 
-    if hasattr(sys.stdout, 'detach'):
-        sys.stdout.detach().detach()
+    # STDIN becomes /dev/null
+    with open(os.devnull, 'wt') as newin:
+        fdin = os.dup(0)
+        os.dup2(newin.fileno(), 0)
 
-    # Mock in substitutes for users
-    sys.stdin = open(os.devnull, 'wt')
-    sys.stdout = sys.stderr
-
-    # Do the same thing on a fd level
-    # Get the old stdin/out out of the way
-    fdin = os.dup(0)
+    # STDOUT becomes STDERR
     fdout = os.dup(1)
-
-    # Get the new stdio in place
-    os.dup2(sys.stdin.fileno(), 0)
-    os.dup2(sys.stdout.fileno(), 1)
+    os.dup2(2, 1)
 
     return fdin, fdout

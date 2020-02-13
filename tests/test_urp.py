@@ -11,6 +11,7 @@ async def aenumerate(iterable):
     count = 0
     async for val in iterable:
         yield count, val
+        count += 1
 
 
 @pytest.fixture
@@ -23,6 +24,26 @@ def echo_service():
         def ping(self, **args):
             return args
 
+        @method
+        def sync(self):
+            return {"spam": "eggs"}
+
+        @method("async")
+        async def notsync(self):
+            await asyncio.sleep(0.1)
+            return {"spam": "eggs"}
+
+        @method
+        def gen(self):
+            yield {"spam": "eggs"}
+            yield {"foo": "bar"}
+
+        @method
+        async def async_gen(self):
+            await asyncio.sleep(0.1)
+            yield {"spam": "eggs"}
+            await asyncio.sleep(0.1)
+            yield {"foo": "bar"}
     return serv
 
 
@@ -56,5 +77,63 @@ async def test_shoosh(linked_pair):
                     pass
             t = asyncio.create_task(_())
             t.cancel()
+    finally:
+        stask.cancel()
+
+
+@pytest.mark.asyncio
+async def test_sync(linked_pair):
+    client, stask = linked_pair
+    try:
+        async with client:
+            async for i, result in aenumerate(client['example.sync']()):
+                assert i == 0
+                assert result == {'spam': 'eggs'}
+    finally:
+        stask.cancel()
+
+
+@pytest.mark.asyncio
+async def test_async(linked_pair):
+    client, stask = linked_pair
+    try:
+        async with client:
+            async for i, result in aenumerate(client['example.async']()):
+                assert i == 0
+                assert result == {'spam': 'eggs'}
+    finally:
+        stask.cancel()
+
+
+@pytest.mark.asyncio
+async def test_sync_gen(linked_pair):
+    client, stask = linked_pair
+    try:
+        async with client:
+            async for i, result in aenumerate(client['example.gen']()):
+                assert i in (0, 1)
+                if i == 0:
+                    assert result == {'spam': 'eggs'}
+                elif i == 1:
+                    assert result == {'foo': 'bar'}
+                else:
+                    assert False
+    finally:
+        stask.cancel()
+
+
+@pytest.mark.asyncio
+async def test_async_gen(linked_pair):
+    client, stask = linked_pair
+    try:
+        async with client:
+            async for i, result in aenumerate(client['example.async_gen']()):
+                assert i in (0, 1)
+                if i == 0:
+                    assert result == {'spam': 'eggs'}
+                elif i == 1:
+                    assert result == {'foo': 'bar'}
+                else:
+                    assert False
     finally:
         stask.cancel()

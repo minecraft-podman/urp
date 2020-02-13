@@ -3,7 +3,7 @@ import socket
 
 import pytest
 
-from urp.client import connect_inherited_socket
+from urp.client import connect_inherited_socket, errors
 from urp.framework import Service, method
 
 
@@ -44,6 +44,10 @@ def echo_service():
             yield {"spam": "eggs"}
             await asyncio.sleep(0.1)
             yield {"foo": "bar"}
+
+        @method
+        def error(self, msg):
+            raise Exception(msg)
     return serv
 
 
@@ -135,5 +139,18 @@ async def test_async_gen(linked_pair):
                     assert result == {'foo': 'bar'}
                 else:
                     assert False
+    finally:
+        stask.cancel()
+
+
+@pytest.mark.asyncio
+async def test_errors(linked_pair):
+    client, stask = linked_pair
+    try:
+        async with client:
+            async for i, result in aenumerate(client['example.error'](msg="spam&eggs")):
+                assert i == 0
+                assert isinstance(result, errors['builtins.Exception'])
+                assert str(result) == "spam&eggs"
     finally:
         stask.cancel()

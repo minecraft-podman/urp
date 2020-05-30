@@ -5,6 +5,9 @@ description = "(Byte-wise) Unnnamed PRC Protocol"
 authors = ["Jamie Bliss <jamie@ivyleav.es>"]
 license = "LGPL-3.0-or-later"
 repository = "https://github.com/minecraft-podman/urp"
+packages = [
+    { include = "urp" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.7"

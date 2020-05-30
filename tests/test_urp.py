@@ -6,13 +6,7 @@ import pytest
 from urp.client import client_from_inherited_socket, errors
 from urp.framework import Service, method
 
-
-async def aenumerate(iterable):
-    count = 0
-    async for val in iterable:
-        yield count, val
-        count += 1
-
+from .utils import aenumerate
 
 @pytest.fixture
 def echo_service():

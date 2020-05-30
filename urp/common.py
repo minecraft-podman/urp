@@ -309,7 +309,7 @@ class StdioTransport(asyncio.Transport):
         return self.protocol.resume_writing()
 
     def data_received(self, data):
-        return self.protocol.data_received()
+        return self.protocol.data_received(data)
 
     def eof_received(self):
         return self.protocol.eof_received()
@@ -397,9 +397,9 @@ async def connect_fd(protocol, readfd, writefd):
 
     await asyncio.gather(
         loop.connect_read_pipe(lambda: trans, readfd),
-        loop.connect_write_pipe(lambda: trans, readfd),
+        loop.connect_write_pipe(lambda: trans, writefd),
     )
-    return trans, protocol
+    return trans, proto
 
 async def connect_stdio(protocol):
     fdin, fdout = make_stdio_binary()

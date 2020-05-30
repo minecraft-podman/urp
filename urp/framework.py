@@ -165,15 +165,19 @@ class Service(collections.abc.Mapping):
 
         Note that both file descriptors may be the same
         """
-        return await connect_fd(
+        transpo, proto = await connect_fd(
             lambda: ServerStreamProtocol(self),
             reader_fd, writer_fd
         )
+
+        await proto.finished()
 
     async def serve_stdio(self):
         """
         Serve a client connected by stdin/stdout
         """
-        return await connect_stdio(
+        transpo, proto =  await connect_stdio(
             lambda: ServerStreamProtocol(self),
         )
+
+        await proto.finished()

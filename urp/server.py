@@ -80,6 +80,7 @@ class ServerBaseProtocol(BaseUrpProtocol):
             else:
                 await send(MsgType.Return, methval)
         except Exception as exc:
+            # TODO: Produce an .InvalidParameters if applicable
             additional = {
                 'args': exc.args,
                 'msg': str(exc),

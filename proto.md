@@ -1,5 +1,5 @@
-(Unnamed RPC Protocol)
-======================
+Unnamed RPC Protocol
+====================
 
 * Pulls a bunch of ideals from varlink
 * Encoded as two msgpack streams, one in each direction
@@ -49,7 +49,7 @@ Parameters:
 
 A method call. This creates a channel.
 
-If the log level is given, than any log message produced by the server less than this level should be surpressed and not delivered to the client. If the log level is not given, then no log messages should be sent.
+If the log level is given, then any log message produced by the server less than this level should be surpressed and not delivered to the client. If the log level is not given, then no log messages should be sent.
 
 #### 2 Return (S2C)
 Parameters:

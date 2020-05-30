@@ -1,4 +1,4 @@
-(Byte-wise) Unnamed RPC Protocol
-================================
+Unnamed RPC Protocol
+====================
 
 A msgpack based RPC Protocol suitable for a variety of transports and wrappings.

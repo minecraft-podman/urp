@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "burp"
+name = "unnamed-rpc"
 version = "0.0.1"
-description = "(Byte-wise) Unnnamed PRC Protocol"
+description = "Unnnamed PRC Protocol"
 authors = ["Jamie Bliss <jamie@ivyleav.es>"]
 license = "LGPL-3.0-or-later"
 repository = "https://github.com/minecraft-podman/urp"

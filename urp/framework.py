@@ -5,7 +5,7 @@ import asyncio
 import collections.abc
 import socket
 
-from .common import make_stdio_binary
+from .common import connect_fd, connect_stdio
 from .server import ServerStreamProtocol, ServerSubprocessProtocol
 
 __all__ = ('method', 'Service')
@@ -165,12 +165,15 @@ class Service(collections.abc.Mapping):
 
         Note that both file descriptors may be the same
         """
-        raise NotImplementedError
+        return await connect_fd(
+            lambda: ServerStreamProtocol(self),
+            reader_fd, writer_fd
+        )
 
     async def serve_stdio(self):
         """
         Serve a client connected by stdin/stdout
         """
-        fdin, fdout = make_stdio_binary()
-        # Ok, serve the stuff
-        return await self.serve_inherited_fd(fdin, fdout)
+        return await connect_stdio(
+            lambda: ServerStreamProtocol(self),
+        )

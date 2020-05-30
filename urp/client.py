@@ -6,12 +6,12 @@ import types
 
 from .common import (
     MsgType, BaseUrpProtocol, UrpStreamMixin, UrpSubprocessMixin,
-    make_stdio_binary, Disconnected
+    connect_fd, connect_stdio, Disconnected,
 )
 
 __all__ = (
-    'errors', 'connect_tcp', 'connect_unix', 'connect_inherited_fd',
-    'connect_stdio', 'connect_inherited_socket',
+    'errors', 'connect_tcp', 'connect_unix', 'client_from_inherited_fd',
+    'client_from_stdio', 'client_from_inherited_socket',
 )
 
 
@@ -124,22 +124,26 @@ async def connect_unix(path, **opts):
     return proto
 
 
-async def connect_inherited_fd(reader_fd, writer_fd):
+async def client_from_inherited_fd(reader_fd, writer_fd):
     """
     Connect via reader and writer file descriptors.
     """
-    raise NotImplementedError
+    return await connect_fd(
+        lambda: ClientStreamProtocol(),
+        reader_fd, writer_fd
+    )
 
 
-async def connect_stdio():
+async def client_from_stdio():
     """
     Connect via our stdin and stdout.
     """
-    fdin, fdout = make_stdio_binary()
-    return await connect_inherited_fd(fdin, fdout)
+    return await connect_stdio(
+        lambda: ClientStreamProtocol(),
+    )
 
 
-async def connect_inherited_socket(sock_fd, **opts):
+async def client_from_inherited_socket(sock_fd, **opts):
     """
     Connect via a connected socket file descriptor.
     """

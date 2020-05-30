@@ -3,7 +3,7 @@ import socket
 
 import pytest
 
-from urp.client import connect_inherited_socket, errors
+from urp.client import client_from_inherited_socket, errors
 from urp.framework import Service, method
 
 
@@ -55,7 +55,7 @@ def echo_service():
 async def linked_pair(echo_service):
     csock, ssock = socket.socketpair()
     server_task = asyncio.create_task(echo_service.serve_inherited_socket(ssock))
-    client = await connect_inherited_socket(csock)
+    client = await client_from_inherited_socket(csock)
     return client, server_task
 
 

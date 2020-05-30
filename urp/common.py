@@ -280,7 +280,85 @@ class UrpSubprocessMixin(asyncio.SubprocessProtocol):
         self._transport.get_pipe_transport(0).write(data)
 
 
-# TODO: stdio/inherited FD mixin
+class StdioTransport(asyncio.Transport):
+    """
+    Acts as a stream transport for Protocols for inherited fds
+    """
+
+    protocol = None
+    reader = None
+    writer = None
+
+    # Protocol methods
+    def connection_made(self, transport):
+        if isinstance(transport, asyncio.ReadTransport):
+            self.reader = transport
+        if isinstance(transport, asyncio.WriteTransport):
+            self.writer = transport
+
+        if self.reader is not None and self.writer is not None:
+            self.protocol.connection_made(self)
+
+    def connection_lost(self, exc):
+        return self.protocol.connection_lost(exc)
+
+    def pause_writing(self):
+        return self.protocol.pause_writing()
+
+    def resume_writing(self):
+        return self.protocol.resume_writing()
+
+    def data_received(self, data):
+        return self.protocol.data_received()
+
+    def eof_received(self):
+        return self.protocol.eof_received()
+
+    # Transport methods
+    def is_closing(self):
+        """Return True if the transport is closing or closed."""
+        return self.reader.is_closing() or self.writer.is_closing()
+
+    def close(self):
+        self.reader.close()
+        self.writer.close()
+
+    def set_protocol(self, protocol):
+        """Set a new protocol."""
+        self.protocol = protocol
+
+    def get_protocol(self):
+        """Return the current protocol."""
+        return self.protocol
+
+    # ReadTransport methods
+    def is_reading(self):
+        return self.reader.is_reading()
+
+    def pause_reading(self):
+        return self.reader.pause_reading()
+
+    def resume_reading(self):
+        return self.reader.resume_reading()
+
+    # WriteTransport methods
+    def set_write_buffer_limits(self, high=None, low=None):
+        return self.writer.set_write_buffer_limits(high, low)
+
+    def get_write_buffer_size(self):
+        return self.writer.get_write_buffer_size()
+
+    def write(self, data):
+        return self.writer.write(data)
+
+    def write_eof(self):
+        raise self.writer.write_eof()
+
+    def can_write_eof(self):
+        return self.writer.can_write_eof()
+
+    def abort(self):
+        return self.writer.abort()
 
 def make_stdio_binary():
     """
@@ -299,3 +377,30 @@ def make_stdio_binary():
     os.dup2(2, 1)
 
     return fdin, fdout
+
+
+async def connect_fd(protocol, readfd, writefd):
+    """
+    Connects the given protocol (by factory) to the given reader and writer (by
+    file descriptor).
+    """
+    if isinstance(readfd, int):
+        readfd = os.fdopen(readfd, 'rb')
+    if isinstance(writefd, int):
+        writefd = os.fdopen(writefd, 'wb')
+
+    loop = asyncio.get_running_loop()
+
+    proto = protocol()
+    trans = StdioTransport()
+    trans.set_protocol(proto)
+
+    await asyncio.gather(
+        loop.connect_read_pipe(lambda: trans, readfd),
+        loop.connect_write_pipe(lambda: trans, readfd),
+    )
+    return trans, protocol
+
+async def connect_stdio(protocol):
+    fdin, fdout = make_stdio_binary()
+    return await connect_fd(protocol, fdin, fdout)

@@ -11,7 +11,7 @@ from .common import (
 
 __all__ = (
     'errors', 'connect_tcp', 'connect_unix', 'client_from_inherited_fd',
-    'client_from_stdio', 'client_from_inherited_socket',
+    'client_from_stdio', 'client_from_inherited_socket', 'spawn_server',
 )
 
 
@@ -160,4 +160,16 @@ async def client_from_inherited_socket(sock_fd, **opts):
     return proto
 
 
-# TODO: Run command
+async def spawn_server(*cmd):
+    """
+    Run a subprocess on the assumption it will serve on stdio and connect a
+    client to it.
+    """
+    
+    loop = asyncio.get_running_loop()
+    _, protocol = await loop.subprocess_exec(
+        ClientSubprocessProtocol,
+        *cmd,
+    )
+
+    return protocol

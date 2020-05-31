@@ -74,6 +74,8 @@ class Service(collections.abc.Mapping):
 
         cls, meth = self._method_index[key]
         bound_meth = meth.__get__(cls())  # Very Py3 way
+        # Wrap to handle things like:
+        # * Producing an .InvalidParameters if applicable
         return bound_meth
 
     def __iter__(self):

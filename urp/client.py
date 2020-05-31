@@ -61,7 +61,6 @@ class ClientBaseProtocol(BaseUrpProtocol):
                     while True:
                         msg = await queue.get()
                         if isinstance(msg, Exception):
-                            # TODO: Raise or return?
                             raise msg
                         elif msg is None:
                             raise Disconnected
@@ -76,6 +75,7 @@ class ClientBaseProtocol(BaseUrpProtocol):
                             ...
                 except asyncio.CancelledError:
                     send(MsgType.Shoosh)
+                    raise
 
         return call_method
 

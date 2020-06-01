@@ -252,6 +252,9 @@ class UrpStreamMixin(asyncio.Protocol):
 
 
 class UrpSubprocessMixin(asyncio.SubprocessProtocol):
+    def process_exited(self):
+        pass
+
     def pipe_connection_lost(self, fd, exc):
         if fd == 0:  # SSH's stdin
             self._write_proxy.shutdown(exc)

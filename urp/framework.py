@@ -178,7 +178,7 @@ class Service(collections.abc.Mapping):
         """
         Serve a client connected by stdin/stdout
         """
-        transpo, proto =  await connect_stdio(
+        transpo, proto = await connect_stdio(
             lambda: ServerStreamProtocol(self),
         )
 

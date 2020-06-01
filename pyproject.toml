@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "unnamed-rpc"
-version = "0.0.1"
+version = "0.0.2"
 description = "Unnnamed PRC Protocol"
 authors = ["Jamie Bliss <jamie@ivyleav.es>"]
 license = "LGPL-3.0-or-later"
